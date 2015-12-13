@@ -27,23 +27,40 @@ def clean_str(string):
 
 def load_data_and_labels():
     """
-    Loads MR polarity data from files, splits the data into words and generates labels.
-    Returns split sentences and labels.
+    Loads radiology reports, splits the data into words and generates labels.
+    Returns split sentences (report text) and labels.
     """
-    # Load data from files
-    positive_examples = list(open("./data/rt-polaritydata/rt-polarity.pos").readlines())
-    positive_examples = [s.strip() for s in positive_examples]
-    negative_examples = list(open("./data/rt-polaritydata/rt-polarity.neg").readlines())
-    negative_examples = [s.strip() for s in negative_examples]
-    # Split by words
-    x_text = positive_examples + negative_examples
+    # Load data from file
+    d = pd.read_csv('data/radiology.csv')
+    d.drop_duplicates(inplace=True)
+
+    # catagorize by the first two characters of the exam description
+    d['etype'] = d.examDesc.apply(lambda x: x[:2])
+
+    def get_len(x):
+        try:
+            return len(x)
+        except:
+            return 0
+
+    d['reportText_length'] = d.reportText.apply(get_len)
+    d = d[d.reportText_length > 0]
+
+    etypes = d.etype.unique()
+
+    for e in etypes:
+        d['label_'+e] = 0
+        d['label_'+e][d.etype == e] = 1
+
+    df_labels = d[[c for c in d.columns if 'label' in c]]
+    labels = df_labels.as_matrix()
+
+    reports = d['reportText'].values
+    x_text = [s.strip() for s in reports]
     x_text = [clean_str(sent) for sent in x_text]
     x_text = [s.split(" ") for s in x_text]
-    # Generate labels
-    positive_labels = [[0, 1] for _ in positive_examples]
-    negative_labels = [[1, 0] for _ in negative_examples]
-    y = np.concatenate([positive_labels, negative_labels], 0)
-    return [x_text, y]
+
+    return [x_text, labels]
 
 
 def pad_sentences(sentences, padding_word="<PAD/>"):
