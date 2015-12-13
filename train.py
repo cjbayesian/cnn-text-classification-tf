@@ -65,7 +65,7 @@ with tf.Graph().as_default():
     with sess.as_default():
         cnn = TextCNN(
             sequence_length=x_train.shape[1],
-            num_classes=2,
+            num_classes=11,
             vocab_size=len(vocabulary),
             embedding_size=FLAGS.embedding_dim,
             filter_sizes=map(int, FLAGS.filter_sizes.split(",")),
